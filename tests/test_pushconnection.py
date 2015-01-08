@@ -100,7 +100,7 @@ class DummyPushServer:
 
     def set_reject_code(self, rc):
         self.reject_code = rc
-        
+
 
 class ConnectionTestCase(unittest.TestCase):
     def on_push_failed(self, token, identifier, status):
@@ -109,7 +109,7 @@ class ConnectionTestCase(unittest.TestCase):
 
     def setUp(self):
         self.failure_event = gevent.event.Event()
-        self.failure = None 
+        self.failure = None
         self.srv = DummyPushServer(self)
         self.srv.start()
 
@@ -150,7 +150,7 @@ class ConnectionTestCase(unittest.TestCase):
         self.failure_event.wait(timeout=0.1)
         self.assertIsNotNone(self.failure)
         self.assertIs(myid, self.failure[2])
- 
+
     def test_params(self):
         pb = PushBaby(certfile=None, platform=self.srv.get_addr())
         pb.on_push_failed = self.on_push_failed

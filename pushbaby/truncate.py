@@ -25,10 +25,11 @@ def is_too_long(aps, max_length=2048):
     """
     Returns True if the given APS dictionary is too long for a push.
     Note that the maximum is now 2kB "In iOS 8 and later" although in
-    practice, payloads over 256 bytes (the old limit) are still 
+    practice, payloads over 256 bytes (the old limit) are still
     delivered to iOS 7 or earlier devices.
     """
     return len(json_for_aps(aps)) > max_length
+
 
 def truncate(aps, max_length=2048):
     aps = copy.copy(aps)
@@ -63,7 +64,7 @@ def _choppables_for_aps(aps):
 
     alert = aps['alert']
     if isinstance(alert, str) or isinstance(alert, unicode):
-        ret.append(('alert',)) 
+        ret.append(('alert',))
     elif isinstance(alert, dict):
         if 'body' in alert:
             ret.append(('alert.body',))

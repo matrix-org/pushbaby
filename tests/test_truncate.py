@@ -86,8 +86,10 @@ class TruncateTestCase(unittest.TestCase):
         # I have no great desire to manually parse UTF-8 to work around this since
         # it works fine on Linux.
         if len(u"\U0001F430") != 1:
-            msg = ("Unicode support is broken in your Python binary. " +
-                "Truncating messages with multibyte unicode characters will fail.")
+            msg = (
+                "Unicode support is broken in your Python binary. " +
+                "Truncating messages with multibyte unicode characters will fail."
+            )
             self.fail(msg)
 
     def test_truncate_string_with_multibyte(self):

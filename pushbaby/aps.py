@@ -1,6 +1,6 @@
 import json.encoder
 
-# May as well cache a JSON encoder because we'll be 
+# May as well cache a JSON encoder because we'll be
 # using the same altered configuration each time
 # (the json module will otherwise create it each time)
 #
@@ -20,9 +20,10 @@ import json.encoder
 # text fields we don't handle
 jsonencoder = json.encoder.JSONEncoder(
     ensure_ascii=False,
-    encoding='utf8', # 'utf8' != 'utf-8' here, see above
+    encoding='utf8',  # 'utf8' != 'utf-8' here, see above
     separators=(',', ':')
 )
+
 
 def json_for_aps(aps):
     return jsonencoder.encode({'aps': aps}).encode('utf8')
