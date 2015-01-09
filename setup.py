@@ -40,7 +40,7 @@ def exec_file(names):
 
 setup(
     name="pushbaby",
-    version=exec_file(("pushbaby", "__init__.py",))["__version__"],
+    version=exec_file(("pushbaby", "version.py",))["__version__"],
     packages=['pushbaby'],
     license="Apache License, Version 2.0",
     description="APNS library using gevent",
