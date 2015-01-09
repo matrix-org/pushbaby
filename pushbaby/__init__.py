@@ -20,14 +20,35 @@ from pushbaby.pushconnection import PushConnection, ConnectionDeadException
 
 logger = logging.getLogger(__name__)
 
+__version__ = "0.0.1"
+
 
 class PushBaby:
+    """
+    This class is all that you should need to use in the majority of cases.
+    Sending a push can be achieved using the send() method.
+    To receive errors, set the 'on_push_failed' member like so:
+
+        def on_push_failed(token, identifier, status):
+            [handle error]
+
+        pb = PushBaby(cerfile='mycert.pem')
+        pb.on_push_failed = on_push_failed
+    """
     ADDRESSES = {
         'prod': ('gateway.push.apple.com', 2195),
         'sandbox': ('gateway.sandbox.push.apple.com', 2195)
     }
 
     def __init__(self, certfile, keyfile=None, platform='sandbox'):
+        """
+        Args:
+            certfile: Path to a certificate file in PEM format
+                      This may also include the private key.
+            keyfile: Path to the private key file in PEM format
+            platform: The platform to use ('sandbox' or 'prod')
+                      or a tuple of hostname and port.
+        """
         if isinstance(platform, str):
             if platform in PushBaby.ADDRESSES:
                 self.address = PushBaby.ADDRESSES[platform]

@@ -15,23 +15,47 @@
 # limitations under the License.
 
 import os
-from setuptools import setup, find_packages
+import codecs
+from setuptools import setup
 
 
-# Utility function to read the README file.
-# Used for the long_description.  It's nice, because now 1) we have a top level
-# README file and 2) it's easier to type in the README file than to put a raw
-# string in below ...
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+here = os.path.abspath(os.path.dirname(__file__))
+
+
+def read_file(names, encoding="utf-8"):
+    file_path = os.path.join(here, *names)
+    if encoding:
+        with codecs.open(file_path, encoding=encoding) as f:
+            return f.read()
+    else:
+        with open(file_path, "rb") as f:
+            return f.read()
+
+
+def exec_file(names):
+    code = read_file(names, encoding=None)
+    result = {}
+    exec(code, result)
+    return result
 
 setup(
     name="pushbaby",
-    version=read("VERSION").strip(),
-    packages=find_packages(exclude=["tests", "tests.*"]),
+    version=exec_file(("pushbaby", "__init__.py",))["__version__"],
+    packages=['pushbaby'],
+    license="Apache License, Version 2.0",
     description="APNS library using gevent",
+    url="https://github.com/matrix-org/pushbaby",
+    author="matrix.org",
+    author_email="dave@matrix.org",
+    long_description=read_file(("README.rst",)),
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 2",
+    ],
+    keywords="apns push",
     install_requires=[
         "gevent>=1.0.1",
     ],
-    long_description=read("README.rst"),
 )
