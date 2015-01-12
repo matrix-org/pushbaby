@@ -1,4 +1,2 @@
  * feedback!
- * look at setting TCP_USER_TIMEOUT on Linux to detect dead connections (currently we'd retire & close the connection way before the kernel timed it out)
-   https://gist.github.com/woodrow/1661012
  * Possibly look at TIOCOUTQ to detect what reached the other end and what didn't

@@ -44,6 +44,7 @@ class PushConnection:
     MAX_ERROR_WAIT_SEC = 60
     MAX_PUSHES_PER_CONNECTION = 2**31
     MAX_CONN_IDLE_SEC = 30
+    CONN_TIMEOUT = 10
 
     class SentMessage:
         def __init__(self, sendts, token, payload, expiration, priority, identifier):
@@ -73,6 +74,19 @@ class PushConnection:
         logger.info("Establishing new connection to %s", self.address)
         self.sock = gevent.socket.create_connection(self.address)
         self.sock.settimeout(10.0)
+        # attempt to set the TCP_USER_TIMEOUT sockopt (will only work on Linux)
+        # (from /usr/include/linux/tcp.h: #define TCP_USER_TIMEOUT 18)
+        # Without this, connections will take 15 minutes or much, much longer to
+        # time out if the connection drops which is nonideal since we'll be sending
+        # push into the void during that time
+        try:
+            self.sock.setsockopt(gevent.socket.IPPROTO_TCP, 18, PushConnection.CONN_TIMEOUT * 1000)
+        except gevent.socket.error:
+            logger.warn(
+                "Couldn't set socket timeout (only works on Linux >= 2.6.37). "+
+                "Unresponsive connections will take a long time to timeout and "+
+                "pushes during that time will be lost."
+            )
         # We use a non-ssled connection if both certfile and keyfile
         # are None. This is useful only for testing. None is not the
         # default for certfile so the app would have to explicitly
