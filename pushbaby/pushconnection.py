@@ -84,8 +84,8 @@ class PushConnection:
             self.sock.setsockopt(gevent.socket.IPPROTO_TCP, 18, PushConnection.CONN_TIMEOUT * 1000)
         except gevent.socket.error:
             logger.warn(
-                "Couldn't set socket timeout (only works on Linux >= 2.6.37). "+
-                "Unresponsive connections will take a long time to timeout and "+
+                "Couldn't set socket timeout (only works on Linux >= 2.6.37). " +
+                "Unresponsive connections will take a long time to timeout and " +
                 "pushes during that time will be lost."
             )
         # We use a non-ssled connection if both certfile and keyfile
