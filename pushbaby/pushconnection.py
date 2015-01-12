@@ -212,6 +212,10 @@ class PushConnection:
             logger.error("Got a failure for seq %d that we don't remember!")
 
     def send(self, aps, token, expiration=None, priority=None, identifier=None):
+        if not self.alive:
+            raise ConnectionDeadException()
+        if not self.useable:
+            raise ConnectionDeadException()
         if not self.sock:
             self._open_connection()
 
@@ -238,17 +242,12 @@ class PushConnection:
             aps: The 'aps' dictionary of the push to send (dict)
             descriptor: Opaque variable that is passed back to the pushbaby on failure
         """
-        if not self.alive:
-            raise ConnectionDeadException()
 
         seq = self._nextSeq()
         if seq >= PushConnection.MAX_PUSHES_PER_CONNECTION:
             # IDs are 4 byte so rather than worry about wrapping IDs, just make a new connection
             # Note we don't close the connection because we want to wait to see if any errors arrive
             self._retire_connection()
-
-        if not self.useable:
-            raise ConnectionDeadException()
 
         payload_str = json_for_aps(truncate(aps))
         items = ''
