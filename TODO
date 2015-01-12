@@ -1,2 +1,0 @@
- * feedback!
- * Possibly look at TIOCOUTQ to detect what reached the other end and what didn't

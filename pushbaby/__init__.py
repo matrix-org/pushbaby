@@ -16,6 +16,7 @@ import logging
 import random
 
 from pushbaby.pushconnection import PushConnection, ConnectionDeadException
+from pushbaby.feedbackconnection import FeedbackConnection
 
 
 logger = logging.getLogger(__name__)
@@ -37,8 +38,12 @@ class PushBaby:
         'prod': ('gateway.push.apple.com', 2195),
         'sandbox': ('gateway.sandbox.push.apple.com', 2195)
     }
+    FEEDBACK_ADDRESSES = {
+        'prod': ('feedback.push.apple.com', 2196),
+        'sandbox': ('feedback.sandbox.push.apple.com', 2196)
+    }
 
-    def __init__(self, certfile, keyfile=None, platform='sandbox'):
+    def __init__(self, certfile, keyfile=None, platform='sandbox', feedback_address=None):
         """
         Args:
             certfile: Path to a certificate file in PEM format
@@ -50,16 +55,27 @@ class PushBaby:
         if isinstance(platform, str):
             if platform in PushBaby.ADDRESSES:
                 self.address = PushBaby.ADDRESSES[platform]
+                self.fbaddress = PushBaby.FEEDBACK_ADDRESSES[platform]
             else:
                 self.address = (platform, 2195)
         else:
             self.address = platform
+
+        if feedback_address:
+            self.fbaddress = feedback_address
+
+        if not self.fbaddress:
+            logger.warn(
+                "gateway address manually configured but no feedback_address " +
+                "supplied. Fetching feedback will not work"
+            )
 
         self.sock = None
         self.certfile = certfile
         self.keyfile = keyfile
         self.conns = []
         self.on_push_failed = None
+        self.on_feedback = None
 
     def send(self, aps, token, expiration=None, priority=None, identifier=None):
         """
@@ -88,3 +104,20 @@ class PushBaby:
                 break
             except ConnectionDeadException:
                 self.conns.remove(conn)
+
+    def get_all_feedback(self):
+        """
+        Connects to the feedback service and returns any feedback that is sent
+        as a list of FeedbackItem objects.
+
+        Blocks the current greenlet until all feedback is returned.
+
+        If a network error occurs before any feedback is received, it is
+        propagated to the caller. Otherwise, it is ignored and the feedback
+        that had arrived is returned.
+        """
+        if not self.fbaddress:
+            raise Exception("Attempted to fetch feedback but no feedback_address supplied")
+
+        fbconn = FeedbackConnection(self, self.fbaddress, self.certfile, self.keyfile)
+        return fbconn.get_all()
