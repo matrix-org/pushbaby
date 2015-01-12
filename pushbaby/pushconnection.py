@@ -15,13 +15,17 @@
 import gevent.ssl
 import gevent.socket
 import gevent.timeout
+import gevent.event
+import gevent.queue
 
 import logging
 import struct
 import time
+import sys
 
 from pushbaby.truncate import truncate
 from pushbaby.aps import json_for_aps
+import pushbaby.errors
 
 
 logger = logging.getLogger(__name__)
@@ -36,8 +40,6 @@ class PushConnection:
     ITEM_IDENTIFIER = 3
     ITEM_EXPIRATION = 4
     ITEM_PRIORITY = 5
-
-    ERROR_SHUTDOWN = 10
 
     MAX_ERROR_WAIT_SEC = 60
     MAX_PUSHES_PER_CONNECTION = 2**31
@@ -62,11 +64,12 @@ class PushConnection:
         self.sock = None
         self.alive = True
         self.useable = True
+        self.send_queue = gevent.queue.Queue()
         self.sent = {}
         self.last_push_sent = None
         self.last_failed_seq = None
 
-    def open_connection(self):
+    def _open_connection(self):
         logger.info("Establishing new connection to %s", self.address)
         self.sock = gevent.socket.create_connection(self.address)
         self.sock.settimeout(10.0)
@@ -78,7 +81,8 @@ class PushConnection:
             self.sock = gevent.ssl.wrap_socket(
                 self.sock, keyfile=self.keyfile, certfile=self.certfile
             )
-        gevent.spawn(self.conn_loop)
+        gevent.spawn(self._read_loop)
+        gevent.spawn(self._write_loop)
 
     def _close_connection(self):
         self.alive = False
@@ -92,7 +96,7 @@ class PushConnection:
         self.useable = False
         self.retired_at = time.time()
 
-    def conn_loop(self):
+    def _read_loop(self):
         # This is a little lazy since there is only one command, so
         # we know we'll always have to read exactly 5 bytes after the command
         while self.alive:
@@ -111,6 +115,12 @@ class PushConnection:
                     if e == gevent.ssl._SSLErrorReadTimeout:
                         pass
                     else:
+                        # Note that we do not attempt to do any resending if the
+                        # connection drops, even through we could have lost pushes.
+                        # The problem is that we don't really have any way of knowing
+                        # what to resend so we could end up generating lots of dupes.
+                        # One way may be to use TIOCOUTQ to see how much data the
+                        # other side hasn't ACKed.
                         logger.exception("Caught exception reading from socket: closing")
                         self._close_connection()
                         continue
@@ -142,6 +152,14 @@ class PushConnection:
                 self._push_failed(status, seq)
                 # we now expect the connection to be closed from the other end
 
+    def _write_loop(self):
+        while self.alive and self.useable:
+            try:
+                job = self.send_queue.get(block=True, timeout=10.0)
+                job()
+            except gevent.queue.Empty:
+                continue
+
     def _push_failed(self, status, seq):
         self.last_failed_seq = seq
         self.pruneSent()
@@ -152,7 +170,7 @@ class PushConnection:
 
         if seq in self.sent:
             failed = self.sent[seq]
-            if status == PushConnection.ERROR_SHUTDOWN:
+            if status == pushbaby.errors.SHUTDOWN:
                 # we'll retry this one automatically
                 logger.info("Push failed with SHUTDOWN status: retying")
                 self.pushbaby.send(failed.payload, failed.token, failed.priority, failed.expiration, failed.identifier)
@@ -172,6 +190,27 @@ class PushConnection:
             logger.error("Got a failure for seq %d that we don't remember!")
 
     def send(self, aps, token, expiration=None, priority=None, identifier=None):
+        if not self.sock:
+            self._open_connection()
+
+        sent_event = gevent.event.Event()
+        res = {}
+
+        def sendpush():
+            try:
+                res['ret'] = self._reallysend(aps, token, expiration, priority, identifier)
+            except:
+                logger.exception("Caught exception sending push")
+                res['ex'] = sys.exc_info()[1]
+            sent_event.set()
+        self.send_queue.put(sendpush)
+        sent_event.wait()
+        if 'ex' in res:
+            raise res['ex']
+        else:
+            return res['ret']
+
+    def _reallysend(self, aps, token, expiration=None, priority=None, identifier=None):
         """
         Args:
             aps: The 'aps' dictionary of the push to send (dict)
@@ -179,8 +218,6 @@ class PushConnection:
         """
         if not self.alive:
             raise ConnectionDeadException()
-        if not self.sock:
-            self.open_connection()
 
         seq = self._nextSeq()
         if seq >= PushConnection.MAX_PUSHES_PER_CONNECTION:
@@ -224,9 +261,7 @@ class PushConnection:
             data = struct.pack("!I", data)
         elif item_id == PushConnection.ITEM_EXPIRATION:
             # expiration date (4 bytes)
-            # nb. we ask for the regular python float time but
-            # that's fine - python will just coerce to a long
-            data = struct.pack("!I", data)
+            data = struct.pack("!I", long(data))
         elif item_id == PushConnection.ITEM_PRIORITY:
             # priority (1 byte)
             data = struct.pack("!B", data)
