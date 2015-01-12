@@ -52,6 +52,7 @@ class PushBaby:
             platform: The platform to use ('sandbox' or 'prod')
                       or a tuple of hostname and port.
         """
+        self.fbaddress = None
         if isinstance(platform, str):
             if platform in PushBaby.ADDRESSES:
                 self.address = PushBaby.ADDRESSES[platform]
