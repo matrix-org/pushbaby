@@ -22,6 +22,7 @@ import logging
 import struct
 import time
 import sys
+import errno
 
 from pushbaby.truncate import truncate
 from pushbaby.aps import json_for_aps
@@ -138,6 +139,13 @@ class PushConnection:
                         logger.exception("Caught exception reading from socket: closing")
                         self._close_connection()
                         continue
+                except gevent.socket.error as e:
+                    if e.errno == errno.ECONNRESET:
+                        logger.info("Connection closed remotely")
+                    else:
+                        logger.exception("Caught exception reading from socket: closing")
+                    self._close_connection()
+                    continue
                 except:
                     logger.exception("Caught exception reading from socket: closing")
                     self._close_connection()
