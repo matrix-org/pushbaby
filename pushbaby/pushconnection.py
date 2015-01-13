@@ -175,7 +175,10 @@ class PushConnection:
                 # we now expect the connection to be closed from the other end
 
     def _write_loop(self):
-        while self.alive and self.useable:
+        # we keep running while there are things in the queue because
+        # we can't quite and leave things in the queue or they'll end
+        # up blocked forever
+        while self.alive or not self.send_queue.empty():
             try:
                 job = self.send_queue.get(block=True, timeout=10.0)
                 job()
@@ -243,6 +246,10 @@ class PushConnection:
             descriptor: Opaque variable that is passed back to the pushbaby on failure
         """
 
+        if not self.alive:
+            raise ConnectionDeadException()
+        if not self.useable:
+            raise ConnectionDeadException()
         seq = self._nextSeq()
         if seq >= PushConnection.MAX_PUSHES_PER_CONNECTION:
             # IDs are 4 byte so rather than worry about wrapping IDs, just make a new connection
