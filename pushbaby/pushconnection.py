@@ -209,7 +209,7 @@ class PushConnection:
             for sm in self.sent.values():
                 self.pushbaby.send(sm.payload, sm.token, sm.priority, sm.expiration, sm.identifier)
         else:
-            logger.error("Got a failure for seq %d that we don't remember!")
+            logger.error("Got a failure for seq %d that we don't remember!", seq)
 
     def send(self, aps, token, expiration=None, priority=None, identifier=None):
         if not self.alive:
