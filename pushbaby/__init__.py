@@ -106,6 +106,19 @@ class PushBaby:
             except ConnectionDeadException:
                 self.conns.remove(conn)
 
+    def messages_in_flight(self):
+        """
+        Returns True if there are messages waiting to be sent or that we're
+        still waiting to see if errors occur for.
+        This can be used to determine whether it is safe to shut down the
+        application.
+        """
+        for c in self.conns:
+            if c.messages_in_flight():
+                return True
+        return False
+
+
     def get_all_feedback(self):
         """
         Connects to the feedback service and returns any feedback that is sent

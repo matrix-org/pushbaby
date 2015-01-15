@@ -117,7 +117,7 @@ class PushConnection:
         while self.alive:
             buf = ''
             while len(buf) < 6 and self.alive:
-                self.pruneSent()
+                self.prune_sent()
 
                 try:
                     thisbuf = self.sock.recv(6 - len(buf))
@@ -187,7 +187,7 @@ class PushConnection:
 
     def _push_failed(self, status, seq):
         self.last_failed_seq = seq
-        self.pruneSent()
+        self.prune_sent()
 
         # A push connection is no longer useable once we've had an error down
         # so retire it
@@ -213,6 +213,16 @@ class PushConnection:
                 self.pushbaby.send(sm.payload, sm.token, sm.priority, sm.expiration, sm.identifier)
         else:
             logger.error("Got a failure for seq %d that we don't remember!", seq)
+
+    def messages_in_flight(self):
+        """
+        Returns True if there are messages waiting to be sent or that we're
+        still waiting to see if errors occur for.
+        """
+        self.prune_sent()
+        if not self.send_queue.empty() or len(self.sent) > 0:
+            return True
+        return False
 
     def send(self, aps, token, expiration=None, priority=None, identifier=None):
         if not self.alive:
@@ -301,7 +311,7 @@ class PushConnection:
         self.seq += 1
         return self.seq
 
-    def pruneSent(self):
+    def prune_sent(self):
         for seq, m in self.sent.items():
             # We say it's safe to assume that anything we sent more than this
             # long ago would have failed by now if it was going to fail
