@@ -70,6 +70,7 @@ class PushConnection:
         self.sent = {}
         self.last_push_sent = None
         self.last_failed_seq = None
+        self.open_event = None
 
     def _open_connection(self):
         logger.info("Establishing new connection to %s", self.address)
@@ -230,7 +231,18 @@ class PushConnection:
         if not self.useable:
             raise ConnectionDeadException()
         if not self.sock:
-            self._open_connection()
+            # We'll yield back to the hub whilst the connection is
+            # opened so if another send attempt starts in that time,
+            # wait for the other greenlet to finish: don't try to open
+            # it again!
+            if self.open_event is None:
+                self.open_event = gevent.event.Event()
+                self._open_connection()
+                self.open_event.set()
+            else:
+                self.open_event.wait()
+                if not self.sock:
+                    raise ConnectionDeadException()
 
         sent_event = gevent.event.Event()
         res = {}
