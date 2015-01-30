@@ -237,8 +237,10 @@ class PushConnection:
             # it again!
             if self.open_event is None:
                 self.open_event = gevent.event.Event()
-                self._open_connection()
-                self.open_event.set()
+                try:
+                    self._open_connection()
+                finally:
+                    self.open_event.set()
             else:
                 self.open_event.wait()
                 if not self.sock:
