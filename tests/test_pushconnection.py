@@ -119,12 +119,12 @@ class ConnectionTestCase(unittest.TestCase):
     def test_retry(self):
         pb = PushBaby(certfile=None, platform=self.srv.get_addr())
         pb.on_push_failed = self.on_push_failed
-        pb.send({'alert': u'1'}, '1')
+        pb.send({'aps': {'alert': u'1'}}, '1')
         self.srv.get_push()
         self.assertEquals(None, self.failure)
         self.srv.set_reject_code(10)
-        pb.send({'alert': u'2'}, '2')
-        pb.send({'alert': u'3'}, '3')
+        pb.send({'aps': {'alert': u'2'}}, '2')
+        pb.send({'aps': {'alert': u'3'}}, '3')
         self.assertIsNotNone(self.srv.get_push())
         self.srv.set_reject_code(None)
         # we should not be notified about this failure,
@@ -145,7 +145,7 @@ class ConnectionTestCase(unittest.TestCase):
         pb.on_push_failed = self.on_push_failed
         myid = 'some identifier'
         self.srv.set_reject_code(8)
-        pb.send({'alert': u'1'}, '1', identifier=myid)
+        pb.send({'aps': {'alert': u'1'}}, '1', identifier=myid)
         self.srv.get_push()
         self.failure_event.wait(timeout=0.1)
         self.assertIsNotNone(self.failure)
@@ -155,7 +155,7 @@ class ConnectionTestCase(unittest.TestCase):
         pb = PushBaby(certfile=None, platform=self.srv.get_addr())
         pb.on_push_failed = self.on_push_failed
         exp = time.time() + 3600
-        pb.send({'alert': u'1'}, '1', priority=5, expiration=exp)
+        pb.send({'aps': {'alert': u'1'}}, '1', priority=5, expiration=exp)
         p = self.srv.get_push()
         self.assertEquals(5, p['priority'])
         self.assertEquals(long(exp), p['expiration'])

@@ -25,7 +25,7 @@ import sys
 import errno
 
 from pushbaby.truncate import truncate
-from pushbaby.aps import json_for_aps
+from pushbaby.aps import json_for_payload
 import pushbaby.errors
 
 
@@ -225,7 +225,7 @@ class PushConnection:
             return True
         return False
 
-    def send(self, aps, token, expiration=None, priority=None, identifier=None):
+    def send(self, payload, token, expiration=None, priority=None, identifier=None):
         if not self.alive:
             raise ConnectionDeadException()
         if not self.useable:
@@ -251,7 +251,7 @@ class PushConnection:
 
         def sendpush():
             try:
-                res['ret'] = self._reallysend(aps, token, expiration, priority, identifier)
+                res['ret'] = self._reallysend(payload, token, expiration, priority, identifier)
             except:
                 logger.exception("Caught exception sending push")
                 res['ex'] = sys.exc_info()[1]
@@ -263,11 +263,11 @@ class PushConnection:
         else:
             return res['ret']
 
-    def _reallysend(self, aps, token, expiration=None, priority=None, identifier=None):
+    def _reallysend(self, payload, token, expiration=None, priority=None, identifier=None):
         """
         Args:
-            aps: The 'aps' dictionary of the push to send (dict)
-            descriptor: Opaque variable that is passed back to the pushbaby on failure
+            payload (dict): The payload dictionary of the push to send
+            descriptor (any): Opaque variable that is passed back to the pushbaby on failure
         """
 
         if not self.alive:
@@ -280,7 +280,7 @@ class PushConnection:
             # Note we don't close the connection because we want to wait to see if any errors arrive
             self._retire_connection()
 
-        payload_str = json_for_aps(truncate(aps))
+        payload_str = json_for_payload(truncate(payload))
         items = ''
         items += self._apns_item(PushConnection.ITEM_DEVICE_TOKEN, token)
         items += self._apns_item(PushConnection.ITEM_PAYLOAD, payload_str)
@@ -300,7 +300,7 @@ class PushConnection:
             logger.exception("Caught exception sending push")
             raise
         self.sent[seq] = PushConnection.SentMessage(
-            time.time(), token, aps, expiration, priority, identifier
+            time.time(), token, payload, expiration, priority, identifier
         )
         self.last_push_sent = time.time()
 

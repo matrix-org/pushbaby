@@ -12,27 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-
-from .aps import json_for_aps
+from .aps import json_for_payload
 
 
 class BodyTooLongException(Exception):
     pass
 
 
-def is_too_long(aps, max_length=2048):
+def is_too_long(payload, max_length=2048):
     """
-    Returns True if the given APS dictionary is too long for a push.
+    Returns True if the given payload dictionary is too long for a push.
     Note that the maximum is now 2kB "In iOS 8 and later" although in
     practice, payloads over 256 bytes (the old limit) are still
     delivered to iOS 7 or earlier devices.
     """
-    return len(json_for_aps(aps)) > max_length
+    return len(json_for_payload(payload)) > max_length
 
 
-def truncate(aps, max_length=2048):
-    aps = copy.copy(aps)
+def truncate(payload, max_length=2048):
+    payload = payload.copy()
+    if 'aps' not in payload:
+        if is_too_long(payload, max_length):
+            raise BodyTooLongException()
+        else:
+            return payload
+    aps = payload['aps']
 
     # first ensure all our choppables are unicode objects.
     # We need them to be for truncating to work and this
@@ -43,7 +47,7 @@ def truncate(aps, max_length=2048):
             _choppable_put(aps, c, val.decode('utf8'))
 
     # chop off whole unicode characters until it fits (or we run out of chars)
-    while is_too_long(aps, max_length):
+    while is_too_long(payload, max_length):
         longest = _longest_choppable(aps)
         if longest is None:
             raise BodyTooLongException()
@@ -53,8 +57,9 @@ def truncate(aps, max_length=2048):
         # (see test_truncate.py)
         txt = txt[:-1]
         _choppable_put(aps, longest, txt)
+        payload['aps'] = aps
 
-    return aps
+    return payload
 
 
 def _choppables_for_aps(aps):

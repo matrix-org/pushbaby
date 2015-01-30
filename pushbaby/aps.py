@@ -25,5 +25,5 @@ jsonencoder = json.encoder.JSONEncoder(
 )
 
 
-def json_for_aps(aps):
-    return jsonencoder.encode({'aps': aps}).encode('utf8')
+def json_for_payload(payload):
+    return jsonencoder.encode(payload).encode('utf8')

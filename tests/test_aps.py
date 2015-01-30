@@ -15,7 +15,7 @@
 
 import unittest
 
-from pushbaby.aps import json_for_aps
+from pushbaby.aps import json_for_payload
 
 
 class ApsTestCase(unittest.TestCase):
@@ -24,7 +24,7 @@ class ApsTestCase(unittest.TestCase):
         aps = {
             'alert': txt
         }
-        json_with_multibyte = json_for_aps(aps)
+        json_with_multibyte = json_for_payload({'aps': aps})
         # Shortest encoding uses literal UTF8, not \u escape sequences, and
         # doesn't put unneccesary space after commas and colons.
         shortest_encoding = u"{\"aps\":{\"alert\":\"\U0001F414\"}}".encode('utf8')

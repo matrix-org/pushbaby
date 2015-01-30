@@ -78,18 +78,18 @@ class PushBaby:
         self.on_push_failed = None
         self.on_feedback = None
 
-    def send(self, aps, token, expiration=None, priority=None, identifier=None):
+    def send(self, payload, token, expiration=None, priority=None, identifier=None):
         """
         Attempts to send a push message. On network failures, progagates the exception.
-        It is advised to make all text in the aps dictionary unicode objects and not
+        It is advised to make all text in the payload dictionary unicode objects and not
         mix unicode objects and str objects. If str objects are used, they must be
         in UTF-8 encoding.
         Args:
-            aps: The 'aps' dictionary of the message to send (dict)
-            token: token to send the push to (raw, unencoded bytes)
-            expiration: When the message becomes irrelevant (time in seconds, as from time.time())
-            priority: Integer priority for the message as per Apple's documentation
-            identifier: optional identifier that will be returned if the push fails.
+            payload (dict): The dictionary payload of the push to send
+            token (str): token to send the push to (raw, unencoded bytes)
+            expiration (int, seconds): When the message becomes irrelevant (time in seconds, as from time.time())
+            priority (int): Integer priority for the message as per Apple's documentation
+            identifier (any): optional identifier that will be returned if the push fails.
                         This is opaque to the library and not limited to 4 bytes.
         Throws:
             BodyTooLongException: If the payload body is too long and cannot be truncated to fit
@@ -101,7 +101,7 @@ class PushBaby:
                 self.conns.append(PushConnection(self, self.address, self.certfile, self.keyfile))
             conn = random.choice(self.conns)
             try:
-                conn.send(aps, token, expiration=expiration, priority=priority, identifier=identifier)
+                conn.send(payload, token, expiration=expiration, priority=priority, identifier=identifier)
                 break
             except ConnectionDeadException:
                 self.conns.remove(conn)

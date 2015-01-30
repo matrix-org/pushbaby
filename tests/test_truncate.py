@@ -16,7 +16,7 @@
 import unittest
 
 from pushbaby.truncate import truncate
-from pushbaby.aps import json_for_aps
+from pushbaby.aps import json_for_payload
 
 import string
 
@@ -30,6 +30,10 @@ def sillystring(length, offset=0):
     return u''.join([chars[(i+offset) % len(chars)] for i in xrange(length)])
 
 
+def payload_for_aps(aps):
+    return {'aps': aps}
+
+
 class TruncateTestCase(unittest.TestCase):
     def test_dont_truncate(self):
         # This shouldn't need to be truncated
@@ -37,38 +41,38 @@ class TruncateTestCase(unittest.TestCase):
         aps = {
             'alert': txt
         }
-        self.assertEquals(txt, truncate(aps, 256)['alert'])
+        self.assertEquals(txt, truncate(payload_for_aps(aps), 256)['aps']['alert'])
 
     def test_truncate_alert(self):
-        overhead = len(json_for_aps({'alert': ''}))
+        overhead = len(json_for_payload(payload_for_aps({'alert': ''})))
         txt = simplestring(10)
         aps = {
             'alert': txt
         }
-        self.assertEquals(txt[:5], truncate(aps, overhead+5)['alert'])
+        self.assertEquals(txt[:5], truncate(payload_for_aps(aps), overhead+5)['aps']['alert'])
 
     def test_truncate_alert_body(self):
-        overhead = len(json_for_aps({'alert': {'body': ''}}))
+        overhead = len(json_for_payload(payload_for_aps({'alert': {'body': ''}})))
         txt = simplestring(10)
         aps = {
             'alert': {
                 'body': txt
             }
         }
-        self.assertEquals(txt[:5], truncate(aps, overhead+5)['alert']['body'])
+        self.assertEquals(txt[:5], truncate(payload_for_aps(aps), overhead+5)['aps']['alert']['body'])
 
     def test_truncate_loc_arg(self):
-        overhead = len(json_for_aps({'alert': {'loc-args': ['']}}))
+        overhead = len(json_for_payload(payload_for_aps({'alert': {'loc-args': ['']}})))
         txt = simplestring(10)
         aps = {
             'alert': {
                 'loc-args': [txt]
             }
         }
-        self.assertEquals(txt[:5], truncate(aps, overhead+5)['alert']['loc-args'][0])
+        self.assertEquals(txt[:5], truncate(payload_for_aps(aps), overhead+5)['aps']['alert']['loc-args'][0])
 
     def test_truncate_loc_args(self):
-        overhead = len(json_for_aps({'alert': {'loc-args': ['', '']}}))
+        overhead = len(json_for_payload(payload_for_aps({'alert': {'loc-args': ['', '']}})))
         txt = simplestring(10)
         txt2 = simplestring(10, 3)
         aps = {
@@ -76,8 +80,8 @@ class TruncateTestCase(unittest.TestCase):
                 'loc-args': [txt, txt2]
             }
         }
-        self.assertEquals(txt[:5], truncate(aps, overhead+10)['alert']['loc-args'][0])
-        self.assertEquals(txt2[:5], truncate(aps, overhead+10)['alert']['loc-args'][1])
+        self.assertEquals(txt[:5], truncate(payload_for_aps(aps), overhead+10)['aps']['alert']['loc-args'][0])
+        self.assertEquals(txt2[:5], truncate(payload_for_aps(aps), overhead+10)['aps']['alert']['loc-args'][1])
 
     def test_python_unicode_support(self):
         # a one character unicode string should have a length of one, even if it's one
@@ -93,25 +97,25 @@ class TruncateTestCase(unittest.TestCase):
             self.fail(msg)
 
     def test_truncate_string_with_multibyte(self):
-        overhead = len(json_for_aps({'alert': ''}))
+        overhead = len(json_for_payload(payload_for_aps({'alert': ''})))
         txt = u"\U0001F430"+simplestring(30)
         aps = {
             'alert': txt
         }
         # NB. The number of characters of the string we get is dependent
         # on the json encoding used.
-        self.assertEquals(txt[:17], truncate(aps, overhead+20)['alert'])
+        self.assertEquals(txt[:17], truncate(payload_for_aps(aps), overhead+20)['aps']['alert'])
 
     def test_truncate_multibyte(self):
-        overhead = len(json_for_aps({'alert': ''}))
+        overhead = len(json_for_payload(payload_for_aps({'alert': ''})))
         txt = sillystring(30)
         aps = {
             'alert': txt
         }
-        trunc = truncate(aps, overhead+30)
+        trunc = truncate(payload_for_aps(aps), overhead+30)
         # The string is all 4 byte characters so the trunctaed UTF-8 string
         # should be a multiple of 4 bytes long
-        self.assertEquals(len(trunc['alert'].encode('utf8')) % 4, 0)
+        self.assertEquals(len(trunc['aps']['alert'].encode('utf8')) % 4, 0)
         # NB. The number of characters of the string we get is dependent
         # on the json encoding used.
-        self.assertEquals(txt[:7], trunc['alert'])
+        self.assertEquals(txt[:7], trunc['aps']['alert'])
