@@ -103,7 +103,8 @@ class PushBaby:
             try:
                 conn.send(payload, token, expiration=expiration, priority=priority, identifier=identifier)
                 break
-            except ConnectionDeadException:
+            except:
+                logger.info("Connection died: removing")
                 self.conns.remove(conn)
 
     def messages_in_flight(self):

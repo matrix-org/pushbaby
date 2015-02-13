@@ -259,7 +259,7 @@ class PushConnection:
         self.send_queue.put(sendpush)
         sent_event.wait()
         if 'ex' in res:
-            raise res['ex']
+            raise ConnectionDeadException()
         else:
             return res['ret']
 
