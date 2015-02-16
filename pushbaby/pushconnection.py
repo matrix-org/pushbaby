@@ -23,6 +23,7 @@ import struct
 import time
 import sys
 import errno
+import base64
 
 from pushbaby.truncate import truncate
 from pushbaby.aps import json_for_payload
