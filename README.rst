@@ -21,3 +21,27 @@ If you use PushBaby, remember that the rest of your application
 must be gevent compatible, or you'll find PushBaby won't do
 important things like receive errors.
 
+Why PushBaby?
+=============
+There are many alternative APNS libraries for Python, for example:
+
+applepushnotification
+  https://github.com/martinkou/applepushnotification
+  Similar, gevent-based library. Unmaintained.
+apns
+  https://github.com/djacobs/PyAPNs
+  Uses pure python threads but will not always feed back errors if pushes can't
+  be sent to the gateway.
+pyapns
+  https://github.com/samuraisam/pyapns/tree/master
+  A full-featured XML-RPC HTTP-to-APNS server.
+apns-clerk
+  https://bitbucket.org/aleksihoffman/apns-clerk
+  Fork of apns-client. Waits for error responses but means all calls to send a
+  push block synchronously for some time.
+APNSWrapper / HypnoAPNSWrapper
+  https://code.google.com/p/apns-python-wrapper/
+  Unmaintained. Uses openssl s_client.
+apns-client
+  https://bitbucket.org/sardarnl/apns-client
+  Unmaintained
