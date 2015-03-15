@@ -204,7 +204,7 @@ class PushConnection:
             else:
                 logger.warn("Push to token %s failed with status %d", base64.b64encode(failed.token), status)
                 if self.pushbaby.on_push_failed:
-                    self.pushbaby.on_push_failed(base64.b64encode(failed.token), failed.identifier, status)
+                    self.pushbaby.on_push_failed(failed.token, failed.identifier, status)
 
             # Any pushes after a failed one are not processed and need to be resent
             # we've already pruned out the ones before so if we remove the failed one,
