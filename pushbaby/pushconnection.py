@@ -75,15 +75,15 @@ class PushConnection:
 
     def _open_connection(self):
         logger.info("Establishing new connection to %s", self.address)
-        self.sock = gevent.socket.create_connection(self.address)
-        self.sock.settimeout(10.0)
+        mysock = gevent.socket.create_connection(self.address)
+        mysock.settimeout(10.0)
         # attempt to set the TCP_USER_TIMEOUT sockopt (will only work on Linux)
         # (from /usr/include/linux/tcp.h: #define TCP_USER_TIMEOUT 18)
         # Without this, connections will take 15 minutes or much, much longer to
         # time out if the connection drops which is nonideal since we'll be sending
         # push into the void during that time
         try:
-            self.sock.setsockopt(gevent.socket.IPPROTO_TCP, 18, PushConnection.CONN_TIMEOUT * 1000)
+            mysock.setsockopt(gevent.socket.IPPROTO_TCP, 18, PushConnection.CONN_TIMEOUT * 1000)
         except gevent.socket.error:
             logger.warn(
                 "Couldn't set socket timeout (only works on Linux >= 2.6.37). " +
@@ -96,7 +96,7 @@ class PushConnection:
         # specify None.
         if self.certfile or self.keyfile:
             self.sock = gevent.ssl.wrap_socket(
-                self.sock, keyfile=self.keyfile, certfile=self.certfile
+                mysock, keyfile=self.keyfile, certfile=self.certfile
             )
         gevent.spawn(self._read_loop)
         gevent.spawn(self._write_loop)
@@ -240,6 +240,14 @@ class PushConnection:
                 self.open_event = gevent.event.Event()
                 try:
                     self._open_connection()
+                except:
+                    logger.exception("Caught exception opening connection")
+                    self.alive = False
+                    self.useable = False
+                    # Don't raise ConnectionDeadException here: this is reserved
+                    # for connections which did work and now don't. Raising it
+                    # when the connection has never worked will cause loops.
+                    raise
                 finally:
                     self.open_event.set()
             else:
