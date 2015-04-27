@@ -98,6 +98,8 @@ class PushConnection:
             self.sock = gevent.ssl.wrap_socket(
                 mysock, keyfile=self.keyfile, certfile=self.certfile
             )
+        else:
+            self.sock = mysock
         gevent.spawn(self._read_loop)
         gevent.spawn(self._write_loop)
 
