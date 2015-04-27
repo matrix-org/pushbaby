@@ -15,7 +15,7 @@
 import logging
 import random
 
-from pushbaby.pushconnection import PushConnection, ConnectionDeadException
+from pushbaby.pushconnection import PushConnection
 from pushbaby.feedbackconnection import FeedbackConnection
 
 
@@ -118,7 +118,6 @@ class PushBaby:
             if c.messages_in_flight():
                 return True
         return False
-
 
     def get_all_feedback(self):
         """
