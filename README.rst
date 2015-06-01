@@ -4,12 +4,12 @@ Introduction
 PushBaby is a simple APNS library using gevent. PushBaby aims to
 do the hard bits of APNS for you and no more. It handles:
 
- * Packing APNS messages into the binary payload format
- * Establishing and reestablishing SSL connections
- * Receiving and propagating errors to your application, asynchronously
- * Encoding pushes to JSON using efficient encoding
- * Truncating messages to fit APNS
- * Retrying pushes on nonfatal errors
+* Packing APNS messages into the binary payload format
+* Establishing and reestablishing SSL connections
+* Receiving and propagating errors to your application, asynchronously
+* Encoding pushes to JSON using efficient encoding
+* Truncating messages to fit APNS
+* Retrying pushes on nonfatal errors
 
 PushBaby takes APNS payloads as dictionaries: it does not attempt to
 construct them for you.
