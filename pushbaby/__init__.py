@@ -94,18 +94,15 @@ class PushBaby:
         Throws:
             BodyTooLongException: If the payload body is too long and cannot be truncated to fit
         """
-
-        # we only use one conn at a time currently but we may as well do this...
-        while True:
-            if len(self.conns) == 0:
-                self.conns.append(PushConnection(self, self.address, self.certfile, self.keyfile))
-            conn = random.choice(self.conns)
-            try:
-                conn.send(payload, token, expiration=expiration, priority=priority, identifier=identifier)
-                break
-            except:
-                logger.info("Connection died: removing")
-                self.conns.remove(conn)
+        if len(self.conns) == 0:
+            self.conns.append(PushConnection(self, self.address, self.certfile, self.keyfile))
+        conn = random.choice(self.conns)
+        try:
+            conn.send(payload, token, expiration=expiration, priority=priority, identifier=identifier)
+        except:
+            logger.info("Connection died: removing")
+            self.conns.remove(conn)
+            raise
 
     def messages_in_flight(self):
         """
