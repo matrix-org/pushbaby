@@ -104,10 +104,11 @@ class PushBaby:
             conn = random.choice(self.conns)
             try:
                 conn.send(payload, token, expiration=expiration, priority=priority, identifier=identifier)
-                break
+                return
             except:
                 logger.info("Connection died: removing")
                 self.conns.remove(conn)
+        raise SendFailedException()
 
     def messages_in_flight(self):
         """
@@ -137,3 +138,7 @@ class PushBaby:
 
         fbconn = FeedbackConnection(self, self.fbaddress, self.certfile, self.keyfile)
         return fbconn.get_all()
+
+
+class SendFailedException(Exception):
+    pass
